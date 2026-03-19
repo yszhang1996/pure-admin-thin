@@ -24,6 +24,10 @@ export const useUserStore = defineStore("pure-user", {
     username: storageLocal().getItem<DataInfo<number>>(userKey)?.username ?? "",
     // 昵称
     nickname: storageLocal().getItem<DataInfo<number>>(userKey)?.nickname ?? "",
+    // 手机号
+    phone: storageLocal().getItem<DataInfo<number>>(userKey)?.phone ?? "",
+    // 邮箱
+    email: storageLocal().getItem<DataInfo<number>>(userKey)?.email ?? "",
     // 页面级别权限
     roles: storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [],
     // 按钮级别权限
@@ -46,6 +50,14 @@ export const useUserStore = defineStore("pure-user", {
     /** 存储昵称 */
     SET_NICKNAME(nickname: string) {
       this.nickname = nickname;
+    },
+    /** 存储手机号 */
+    SET_PHONE(phone: string) {
+      this.phone = phone;
+    },
+    /** 存储邮箱 */
+    SET_EMAIL(email: string) {
+      this.email = email;
     },
     /** 存储角色 */
     SET_ROLES(roles: Array<string>) {

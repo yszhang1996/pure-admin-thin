@@ -40,6 +40,8 @@ export type userType = {
   avatar?: string;
   username?: string;
   nickname?: string;
+  phone?: string;
+  email?: string;
   roles?: Array<string>;
   permissions?: Array<string>;
   isRemembered?: boolean;

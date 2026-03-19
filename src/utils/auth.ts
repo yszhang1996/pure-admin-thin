@@ -15,6 +15,10 @@ export interface DataInfo<T> {
   username?: string;
   /** 昵称 */
   nickname?: string;
+  /** 手机号 */
+  phone?: string;
+  /** 邮箱 */
+  email?: string;
   /** 当前登录用户的角色 */
   roles?: Array<string>;
   /** 当前登录用户的按钮级别权限 */
@@ -68,10 +72,20 @@ export function setToken(data: DataInfo<Date>) {
       : {}
   );
 
-  function setUserKey({ avatar, username, nickname, roles, permissions }) {
+  function setUserKey({
+    avatar,
+    username,
+    nickname,
+    phone,
+    email,
+    roles,
+    permissions
+  }) {
     useUserStoreHook().SET_AVATAR(avatar);
     useUserStoreHook().SET_USERNAME(username);
     useUserStoreHook().SET_NICKNAME(nickname);
+    useUserStoreHook().SET_PHONE(phone);
+    useUserStoreHook().SET_EMAIL(email);
     useUserStoreHook().SET_ROLES(roles);
     useUserStoreHook().SET_PERMS(permissions);
     storageLocal().setItem(userKey, {
@@ -80,6 +94,8 @@ export function setToken(data: DataInfo<Date>) {
       avatar,
       username,
       nickname,
+      phone,
+      email,
       roles,
       permissions
     });
@@ -91,6 +107,8 @@ export function setToken(data: DataInfo<Date>) {
       avatar: data?.avatar ?? "",
       username,
       nickname: data?.nickname ?? "",
+      phone: data?.phone ?? "",
+      email: data?.email ?? "",
       roles,
       permissions: data?.permissions ?? []
     });
@@ -101,6 +119,10 @@ export function setToken(data: DataInfo<Date>) {
       storageLocal().getItem<DataInfo<number>>(userKey)?.username ?? "";
     const nickname =
       storageLocal().getItem<DataInfo<number>>(userKey)?.nickname ?? "";
+    const phone =
+      storageLocal().getItem<DataInfo<number>>(userKey)?.phone ?? "";
+    const email =
+      storageLocal().getItem<DataInfo<number>>(userKey)?.email ?? "";
     const roles =
       storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [];
     const permissions =
@@ -109,6 +131,8 @@ export function setToken(data: DataInfo<Date>) {
       avatar,
       username,
       nickname,
+      phone,
+      email,
       roles,
       permissions
     });
