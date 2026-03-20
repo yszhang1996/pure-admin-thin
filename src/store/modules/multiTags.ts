@@ -12,23 +12,16 @@ import {
   storageLocal,
   responsiveStorageNameSpace
 } from "../utils";
-import { usePermissionStoreHook } from "./permission";
 
 export const useMultiTagsStore = defineStore("pure-multiTags", {
   state: () => ({
-    // 存储标签页信息（路由信息）
     multiTags: storageLocal().getItem<StorageConfigs>(
       `${responsiveStorageNameSpace()}configure`
     )?.multiTagsCache
       ? storageLocal().getItem<StorageConfigs>(
           `${responsiveStorageNameSpace()}tags`
         )
-      : ([
-          ...routerArrays,
-          ...usePermissionStoreHook().flatteningRoutes.filter(
-            v => v?.meta?.fixedTag
-          )
-        ] as any),
+      : ([...routerArrays] as any),
     multiTagsCache: storageLocal().getItem<StorageConfigs>(
       `${responsiveStorageNameSpace()}configure`
     )?.multiTagsCache
@@ -39,6 +32,13 @@ export const useMultiTagsStore = defineStore("pure-multiTags", {
     }
   },
   actions: {
+    async initFixedTags() {
+      const { usePermissionStoreHook } = await import("./permission");
+      const fixedTags = usePermissionStoreHook().flatteningRoutes.filter(
+        v => v?.meta?.fixedTag
+      );
+      this.multiTags = [...routerArrays, ...fixedTags] as any;
+    },
     multiTagsCacheChange(multiTagsCache: boolean) {
       this.multiTagsCache = multiTagsCache;
       if (multiTagsCache) {
@@ -70,13 +70,9 @@ export const useMultiTagsStore = defineStore("pure-multiTags", {
         case "push":
           {
             const tagVal = value as multiType;
-            // 不添加到标签页
             if (tagVal?.meta?.hiddenTag) return;
-            // 如果是外链无需添加信息到标签页
             if (isUrl(tagVal?.name)) return;
-            // 如果title为空拒绝添加空信息到标签页
             if (tagVal?.meta?.title.length === 0) return;
-            // showLink:false 不添加到标签页
             if (isBoolean(tagVal?.meta?.showLink) && !tagVal?.meta?.showLink)
               return;
             const tagPath = tagVal.path;
@@ -90,14 +86,12 @@ export const useMultiTagsStore = defineStore("pure-multiTags", {
 
             if (tagHasExits) return;
 
-            // 动态路由可打开的最大数量
             const dynamicLevel = tagVal?.meta?.dynamicLevel ?? -1;
             if (dynamicLevel > 0) {
               if (
                 this.multiTags.filter(e => e?.path === tagPath).length >=
                 dynamicLevel
               ) {
-                // 如果当前已打开的动态路由数大于dynamicLevel，替换第一个动态路由标签
                 const index = this.multiTags.findIndex(
                   item => item?.path === tagPath
                 );

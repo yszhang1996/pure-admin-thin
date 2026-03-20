@@ -54,10 +54,11 @@ const onLogin = async (formEl: FormInstance | undefined) => {
         .then(res => {
           if (res.success) {
             // 获取后端路由
-            return initRouter().then(() => {
+            return initRouter().then(async () => {
               disabled.value = true;
+              const topMenu = await getTopMenu(true);
               router
-                .push(getTopMenu(true).path)
+                .push(topMenu.path)
                 .then(() => {
                   message("登录成功", { type: "success" });
                 })
