@@ -19,6 +19,10 @@ export interface DataInfo<T> {
   roles?: Array<string>;
   /** 当前登录用户的按钮级别权限 */
   permissions?: Array<string>;
+  /** 手机号 */
+  phone?: string;
+  /** 邮箱 */
+  email?: string;
 }
 
 export const userKey = "user-info";
