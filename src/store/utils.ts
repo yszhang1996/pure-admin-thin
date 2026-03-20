@@ -1,6 +1,5 @@
-export { store } from "@/store";
+// 从纯工具库导出，避免循环依赖
 export { routerArrays } from "@/layout/types";
-export { router, resetRouter, constantMenus } from "@/router";
 export { getConfig, responsiveStorageNameSpace } from "@/config";
 export {
   ascending,
@@ -26,3 +25,6 @@ export type {
   cacheType,
   positionType
 } from "./types";
+
+// store实例在index.ts中定义，避免循环依赖
+export { store } from "./index";

@@ -1,12 +1,5 @@
 import { defineStore } from "pinia";
-import {
-  type userType,
-  store,
-  router,
-  resetRouter,
-  routerArrays,
-  storageLocal
-} from "../utils";
+import { type userType, store, routerArrays, storageLocal } from "../utils";
 import {
   type UserResult,
   type RefreshTokenResult,
@@ -77,12 +70,14 @@ export const useUserStore = defineStore("pure-user", {
       });
     },
     /** 前端登出（不调用接口） */
-    logOut() {
+    async logOut() {
       this.username = "";
       this.roles = [];
       this.permissions = [];
       removeToken();
       useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
+      // 动态导入避免循环依赖
+      const { resetRouter, router } = await import("@/router");
       resetRouter();
       router.push("/login");
     },
