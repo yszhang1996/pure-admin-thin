@@ -9,6 +9,7 @@ import {
   filterNoPermissionTree,
   formatFlatteningRoutes
 } from "../utils";
+// 使用静态导入，仅在函数内部使用以避免循环依赖
 import { useMultiTagsStoreHook } from "./multiTags";
 
 export const usePermissionStore = defineStore("pure-permission", {
@@ -31,11 +32,21 @@ export const usePermissionStore = defineStore("pure-permission", {
       this.flatteningRoutes = formatFlatteningRoutes(
         this.constantMenus.concat(routes) as any
       );
+      // 初始化固定标签
+      try {
+        const multiTagsStore = useMultiTagsStoreHook();
+        if (multiTagsStore.initFixedTags && !multiTagsStore.getMultiTagsCache) {
+          multiTagsStore.initFixedTags();
+        }
+      } catch {
+        console.debug("MultiTags store not available yet");
+      }
     },
     /** 监听缓存页面是否存在于标签页，不存在则删除 */
     clearCache() {
       let cacheLength = this.cachePageList.length;
-      const nameList = getKeyList(useMultiTagsStoreHook().multiTags, "name");
+      const multiTagsStore = useMultiTagsStoreHook();
+      const nameList = getKeyList(multiTagsStore.multiTags, "name");
       while (cacheLength > 0) {
         nameList.findIndex(v => v === this.cachePageList[cacheLength - 1]) ===
           -1 &&

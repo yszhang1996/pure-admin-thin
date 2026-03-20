@@ -12,6 +12,7 @@ import {
   storageLocal,
   responsiveStorageNameSpace
 } from "../utils";
+// 使用静态导入，仅在函数内部使用以避免循环依赖
 import { usePermissionStoreHook } from "./permission";
 
 export const useMultiTagsStore = defineStore("pure-multiTags", {
@@ -23,12 +24,7 @@ export const useMultiTagsStore = defineStore("pure-multiTags", {
       ? storageLocal().getItem<StorageConfigs>(
           `${responsiveStorageNameSpace()}tags`
         )
-      : ([
-          ...routerArrays,
-          ...usePermissionStoreHook().flatteningRoutes.filter(
-            v => v?.meta?.fixedTag
-          )
-        ] as any),
+      : ([...routerArrays] as any),
     multiTagsCache: storageLocal().getItem<StorageConfigs>(
       `${responsiveStorageNameSpace()}configure`
     )?.multiTagsCache
@@ -39,6 +35,19 @@ export const useMultiTagsStore = defineStore("pure-multiTags", {
     }
   },
   actions: {
+    initFixedTags() {
+      try {
+        const permissionStore = usePermissionStoreHook();
+        const fixedTags = permissionStore.flatteningRoutes.filter(
+          v => v?.meta?.fixedTag
+        );
+        if (fixedTags.length > 0) {
+          this.multiTags = [...routerArrays, ...fixedTags] as any;
+        }
+      } catch {
+        console.debug("Permission store not available yet");
+      }
+    },
     multiTagsCacheChange(multiTagsCache: boolean) {
       this.multiTagsCache = multiTagsCache;
       if (multiTagsCache) {

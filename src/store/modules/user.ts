@@ -1,12 +1,6 @@
 import { defineStore } from "pinia";
-import {
-  type userType,
-  store,
-  router,
-  resetRouter,
-  routerArrays,
-  storageLocal
-} from "../utils";
+import { router, resetRouter } from "@/router";
+import { type userType, store, routerArrays, storageLocal } from "../utils";
 import {
   type UserResult,
   type RefreshTokenResult,

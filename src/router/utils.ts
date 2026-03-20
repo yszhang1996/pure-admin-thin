@@ -20,8 +20,6 @@ import { getConfig } from "@/config";
 import { buildHierarchyTree } from "@/utils/tree";
 import { userKey, type DataInfo } from "@/utils/auth";
 import { type menuType, routerArrays } from "@/layout/types";
-import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
 const IFrame = () => import("@/layout/frame.vue");
 // https://cn.vitejs.dev/guide/features.html#glob-import
 const modulesRoutes = import.meta.glob("/src/views/**/*.{vue,tsx}");
@@ -139,10 +137,14 @@ function findRouteByPath(path: string, routes: RouteRecordRaw[]) {
   }
 }
 
+// 导入store实例
+import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
+
 /** 动态路由注册完成后，再添加全屏404（页面不存在）页面，避免刷新动态路由页面时误跳转到404页面 */
-function addPathMatch() {
-  if (!router.hasRoute("pathMatch")) {
-    router.addRoute({
+function addPathMatch(routerInstance: any) {
+  if (!routerInstance.hasRoute("pathMatch")) {
+    routerInstance.addRoute({
       path: "/:pathMatch(.*)*",
       name: "PageNotFound",
       component: () => import("@/views/error/404.vue"),
@@ -155,45 +157,46 @@ function addPathMatch() {
 }
 
 /** 处理动态路由（后端返回的路由） */
-function handleAsyncRoutes(routeList) {
+function handleAsyncRoutes(routeList, routerInstance: any) {
+  const permissionStore = usePermissionStoreHook();
+  const multiTagsStore = useMultiTagsStoreHook();
+
   if (routeList.length === 0) {
-    usePermissionStoreHook().handleWholeMenus(routeList);
+    permissionStore.handleWholeMenus(routeList);
   } else {
     formatFlatteningRoutes(addAsyncRoutes(routeList)).map(
       (v: RouteRecordRaw) => {
         // 防止重复添加路由
         if (
-          router.options.routes[0].children.findIndex(
+          routerInstance.options.routes[0].children.findIndex(
             value => value.path === v.path
           ) !== -1
         ) {
           return;
         } else {
           // 切记将路由push到routes后还需要使用addRoute，这样路由才能正常跳转
-          router.options.routes[0].children.push(v);
+          routerInstance.options.routes[0].children.push(v);
           // 最终路由进行升序
-          ascending(router.options.routes[0].children);
-          if (!router.hasRoute(v?.name)) router.addRoute(v);
-          const flattenRouters: any = router
+          ascending(routerInstance.options.routes[0].children);
+          if (!routerInstance.hasRoute(v?.name)) routerInstance.addRoute(v);
+          const flattenRouters: any = routerInstance
             .getRoutes()
             .find(n => n.path === "/");
           // 保持router.options.routes[0].children与path为"/"的children一致，防止数据不一致导致异常
-          flattenRouters.children = router.options.routes[0].children;
-          router.addRoute(flattenRouters);
+          flattenRouters.children = routerInstance.options.routes[0].children;
+          routerInstance.addRoute(flattenRouters);
         }
       }
     );
-    usePermissionStoreHook().handleWholeMenus(routeList);
+    permissionStore.handleWholeMenus(routeList);
   }
-  if (!useMultiTagsStoreHook().getMultiTagsCache) {
-    useMultiTagsStoreHook().handleTags("equal", [
+  if (!multiTagsStore.getMultiTagsCache) {
+    multiTagsStore.handleTags("equal", [
       ...routerArrays,
-      ...usePermissionStoreHook().flatteningRoutes.filter(
-        v => v?.meta?.fixedTag
-      )
+      ...permissionStore.flatteningRoutes.filter(v => v?.meta?.fixedTag)
     ]);
   }
-  addPathMatch();
+  addPathMatch(routerInstance);
 }
 
 /** 初始化路由（`new Promise` 写法防止在异步请求中造成无限循环）*/
@@ -204,13 +207,13 @@ function initRouter() {
     const asyncRouteList = storageLocal().getItem(key) as any;
     if (asyncRouteList && asyncRouteList?.length > 0) {
       return new Promise(resolve => {
-        handleAsyncRoutes(asyncRouteList);
+        handleAsyncRoutes(asyncRouteList, router);
         resolve(router);
       });
     } else {
       return new Promise(resolve => {
         getAsyncRoutes().then(({ data }) => {
-          handleAsyncRoutes(cloneDeep(data));
+          handleAsyncRoutes(cloneDeep(data), router);
           storageLocal().setItem(key, data);
           resolve(router);
         });
@@ -219,7 +222,7 @@ function initRouter() {
   } else {
     return new Promise(resolve => {
       getAsyncRoutes().then(({ data }) => {
-        handleAsyncRoutes(cloneDeep(data));
+        handleAsyncRoutes(cloneDeep(data), router);
         resolve(router);
       });
     });
@@ -271,33 +274,34 @@ function formatTwoStageRoutes(routesList: RouteRecordRaw[]) {
 }
 
 /** 处理缓存路由（添加、删除、刷新） */
-function handleAliveRoute({ name }: ToRouteType, mode?: string) {
+function handleAliveRoute({ name }: any, mode?: string) {
+  const permissionStore = usePermissionStoreHook();
   switch (mode) {
     case "add":
-      usePermissionStoreHook().cacheOperate({
+      permissionStore.cacheOperate({
         mode: "add",
         name
       });
       break;
     case "delete":
-      usePermissionStoreHook().cacheOperate({
+      permissionStore.cacheOperate({
         mode: "delete",
         name
       });
       break;
     case "refresh":
-      usePermissionStoreHook().cacheOperate({
+      permissionStore.cacheOperate({
         mode: "refresh",
         name
       });
       break;
     default:
-      usePermissionStoreHook().cacheOperate({
+      permissionStore.cacheOperate({
         mode: "delete",
         name
       });
       useTimeoutFn(() => {
-        usePermissionStoreHook().cacheOperate({
+        permissionStore.cacheOperate({
           mode: "add",
           name
         });
@@ -388,10 +392,11 @@ function handleTopMenu(route) {
 
 /** 获取所有菜单中的第一个菜单（顶级菜单）*/
 function getTopMenu(tag = false): menuType {
-  const topMenu = handleTopMenu(
-    usePermissionStoreHook().wholeMenus[0]?.children[0]
-  );
-  tag && useMultiTagsStoreHook().handleTags("push", topMenu);
+  const permissionStore = usePermissionStoreHook();
+  const multiTagsStore = useMultiTagsStoreHook();
+
+  const topMenu = handleTopMenu(permissionStore.wholeMenus[0]?.children[0]);
+  tag && multiTagsStore.handleTags("push", topMenu);
   return topMenu;
 }
 
