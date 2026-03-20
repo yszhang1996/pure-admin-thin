@@ -2,8 +2,6 @@ import type { Router } from "vue-router";
 import Cookies from "js-cookie";
 import { isAllEmpty, storageLocal } from "@pureadmin/utils";
 import { initRouter, getTopMenu, findRouteByPath } from "../utils";
-import { usePermissionStoreHook } from "@/store/modules/permission";
-import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { userKey, multipleTabsKey, type DataInfo } from "@/utils/auth";
 
 export function setupDynamicRouteGuard(router: Router) {
@@ -20,6 +18,9 @@ export function setupDynamicRouteGuard(router: Router) {
       next();
       return;
     }
+
+    const { usePermissionStoreHook } = await import("@/store/modules/permission");
+    const { useMultiTagsStoreHook } = await import("@/store/modules/multiTags");
 
     if (
       usePermissionStoreHook().wholeMenus.length === 0 &&
