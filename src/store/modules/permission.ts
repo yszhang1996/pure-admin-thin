@@ -5,10 +5,10 @@ import {
   ascending,
   getKeyList,
   filterTree,
-  constantMenus,
   filterNoPermissionTree,
   formatFlatteningRoutes
 } from "../utils";
+import { constantMenus } from "@/router";
 import { useMultiTagsStoreHook } from "./multiTags";
 
 export const usePermissionStore = defineStore("pure-permission", {
