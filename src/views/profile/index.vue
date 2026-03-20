@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, watch } from "vue";
 import type { FormInstance, UploadProps, UploadRawFile } from "element-plus";
 import { ElMessage } from "element-plus";
 import { useUserStoreHook } from "@/store/modules/user";
@@ -26,9 +26,18 @@ const loading = ref(false);
 
 // 头像上传相关
 const dialogVisible = ref(false);
-const imageUrl = ref(userStore.avatar || "");
+const tempImageUrl = ref("");
 const uploadRef = ref();
 const avatarInputRef = ref<HTMLInputElement>();
+
+// 默认头像URL
+const DEFAULT_AVATAR =
+  "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png";
+
+// 使用计算属性确保头像实时更新
+const imageUrl = computed(() => {
+  return tempImageUrl.value || userStore.avatar || DEFAULT_AVATAR;
+});
 
 // 修复头像点击 - 手动触发文件选择
 const handleAvatarClick = () => {
@@ -53,7 +62,7 @@ const handleFileChange = (event: Event) => {
 
   const reader = new FileReader();
   reader.onload = () => {
-    imageUrl.value = reader.result as string;
+    tempImageUrl.value = reader.result as string;
     dialogVisible.value = true;
   };
   reader.readAsDataURL(file);
@@ -65,7 +74,15 @@ const saveAvatar = () => {
   storageLocal().setItem(userKey, { ...userInfo, avatar: imageUrl.value });
   ElMessage.success("头像更新成功！");
   dialogVisible.value = false;
+  tempImageUrl.value = ""; // 清空临时图像
 };
+
+// 监听弹窗关闭，清空临时图像
+watch(dialogVisible, newVal => {
+  if (!newVal) {
+    tempImageUrl.value = "";
+  }
+});
 
 // 昵称编辑相关
 const nicknameFormRef = ref<FormInstance>();
@@ -221,10 +238,7 @@ const displayEmail = computed(() => {
                   @click="handleAvatarClick"
                 >
                   <el-avatar
-                    :src="
-                      imageUrl ||
-                      'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
-                    "
+                    :src="imageUrl"
                     :size="120"
                     class="border-4 border-white shadow-lg"
                   />
